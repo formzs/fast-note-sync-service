@@ -478,12 +478,21 @@ func (w *WS) OnClose(conn *gws.Conn, err error) {
 	if len(c.BinaryChunkSessions) > 0 {
 		c.BinaryMu.Lock()
 		sessionCount := len(c.BinaryChunkSessions)
-		// 清空所有会话(具体的文件清理由超时机制或 cleanupSession 处理)
+
+		// 遍历所有会话，调用 Close() 方法清理资源
+		for _, session := range c.BinaryChunkSessions {
+			// 使用类型断言检查会话是否实现了 Close() 方法
+			if closer, ok := session.(interface{ Close() }); ok {
+				closer.Close()
+			}
+		}
+
+		// 清空所有会话
 		c.BinaryChunkSessions = make(map[string]any)
 		c.BinaryMu.Unlock()
 
 		if sessionCount > 0 {
-			log(LogWarn, "OnClose: cleared upload sessions on disconnect",
+			log(LogWarn, "OnClose: cleaned upload sessions on disconnect",
 				zap.Int("sessionCount", sessionCount))
 		}
 	}

@@ -56,6 +56,33 @@ type FileUploadBinaryChunkSession struct {
 	CancelFunc     context.CancelFunc // 取消函数，用于超时控制
 }
 
+// Close 清理上传会话资源，关闭文件句柄并删除临时文件
+func (s *FileUploadBinaryChunkSession) Close() {
+	// 停止超时定时器
+	if s.CancelFunc != nil {
+		s.CancelFunc()
+	}
+
+	// 关闭文件句柄
+	if s.FileHandle != nil {
+		if err := s.FileHandle.Close(); err != nil {
+			global.Logger.Warn("FileUploadBinaryChunkSession.Close: failed to close file handle",
+				zap.String("sessionID", s.ID),
+				zap.Error(err))
+		}
+	}
+
+	// 清理临时文件
+	if s.SavePath != "" {
+		if err := os.Remove(s.SavePath); err != nil && !os.IsNotExist(err) {
+			global.Logger.Warn("FileUploadBinaryChunkSession.Close: failed to remove temp file",
+				zap.String("sessionID", s.ID),
+				zap.String("path", s.SavePath),
+				zap.Error(err))
+		}
+	}
+}
+
 // FileDownloadChunkSession 定义文件分块下载的会话状态。
 // 用于跟踪大文件分块下载的进度和文件信息。
 type FileDownloadChunkSession struct {
@@ -695,29 +722,8 @@ func cleanupSession(c *app.WebsocketClient, sessionID string) {
 
 	session := binarySession.(*FileUploadBinaryChunkSession)
 
-	// 停止超时定时器
-	if session.CancelFunc != nil {
-		session.CancelFunc()
-	}
-
-	// 关闭文件句柄
-	if session.FileHandle != nil {
-		if err := session.FileHandle.Close(); err != nil {
-			global.Logger.Warn("cleanupSession: failed to close file handle",
-				zap.String("sessionID", sessionID),
-				zap.Error(err))
-		}
-	}
-
-	// 清理临时文件
-	if session.SavePath != "" {
-		if err := os.Remove(session.SavePath); err != nil && !os.IsNotExist(err) {
-			global.Logger.Warn("cleanupSession: failed to remove temp file",
-				zap.String("sessionID", sessionID),
-				zap.String("path", session.SavePath),
-				zap.Error(err))
-		}
-	}
+	// 使用 Close 方法清理资源
+	session.Close()
 
 	global.Logger.Info("cleanupSession: session cleaned up",
 		zap.String("sessionID", sessionID),
