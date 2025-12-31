@@ -151,13 +151,13 @@ func (n *Note) CreateOrUpdate(c *gin.Context) {
 		return
 	}
 
-	if params.SrcPathHash == "" {
+	if params.SrcPathHash == "" && params.SrcPath != "" {
 		params.SrcPathHash = util.EncodeHash32(params.SrcPath)
 	}
 	if params.PathHash == "" {
 		params.PathHash = util.EncodeHash32(params.Path)
 	}
-	if params.ContentHash == "" {
+	if params.ContentHash == "" && params.Content != "" {
 		params.ContentHash = util.EncodeHash32(params.Content)
 	}
 
