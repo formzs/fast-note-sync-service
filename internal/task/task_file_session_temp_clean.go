@@ -10,6 +10,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// tempFileMaxAge 临时文件最大保留时间
+const tempFileMaxAge = 2 * time.Hour
+
 // FileSessionTempCleanTask 临时文件清理任务
 type FileSessionTempCleanTask struct {
 	firstRun bool
@@ -85,7 +88,7 @@ func (t *FileSessionTempCleanTask) Run(ctx context.Context) error {
 	}
 
 	// 周期性运行：删除超过 2 小时未修改的文件
-	twoHoursAgo := time.Now().Add(-2 * time.Hour)
+	twoHoursAgo := time.Now().Add(-tempFileMaxAge)
 	deletedCount := 0
 	errorCount := 0
 
@@ -95,7 +98,7 @@ func (t *FileSessionTempCleanTask) Run(ctx context.Context) error {
 				zap.String("task", t.Name()),
 				zap.String("type", "loopRun"),
 				zap.String("path", path),
-				zap.String("msg", "error accessing path"),
+				zap.String("msg", "failed to access file during cleanup walk"),
 				zap.Error(err))
 			return nil // 继续处理其他文件
 		}
