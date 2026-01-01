@@ -66,7 +66,12 @@ func (n *Note) Get(c *gin.Context) {
 	note, err := svc.NoteGet(uid, params)
 	if err != nil {
 		global.Logger.Error("apiRouter.Note.Get svc NoteGet err: %v", zap.Error(err))
-		response.ToResponse(code.ErrorNoteGetFailed.WithDetails(err.Error()))
+		response.ToResponse(code.ErrorNoteNotFound.WithDetails(err.Error()))
+		return
+	}
+	if note == nil {
+		global.Logger.Error("apiRouter.Note.Get note not found: vault=%s path=%s", params.Vault, params.Path)
+		response.ToResponse(code.ErrorNoteNotFound)
 		return
 	}
 

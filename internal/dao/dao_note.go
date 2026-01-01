@@ -62,15 +62,15 @@ func (d *Dao) note(uid int64) *query.Query {
 
 // NoteGetByPathHash 根据路径哈希获取笔记
 // 函数名: NoteGetByPathHash
-// 函数使用说明: 根据路径哈希值和保险库ID查询笔记记录。
+// 函数使用说明: 根据路径哈希值和保险库ID查询笔记记录。当记录不存在时返回 nil (不返回错误)。
 // 参数说明:
 //   - hash string: 路径哈希值
 //   - vaultID int64: 保险库ID
 //   - uid int64: 用户ID
 //
 // 返回值说明:
-//   - *Note: 笔记数据
-//   - error: 出错时返回错误
+//   - *Note: 笔记数据，不存在时返回 nil
+//   - error: 只在真实数据库错误时返回，ErrRecordNotFound 返回 nil
 func (d *Dao) NoteGetByPathHash(hash string, vaultID int64, uid int64) (*Note, error) {
 	u := d.note(uid).Note
 	m, err := u.WithContext(d.ctx).Where(
@@ -78,6 +78,9 @@ func (d *Dao) NoteGetByPathHash(hash string, vaultID int64, uid int64) (*Note, e
 		u.PathHash.Eq(hash),
 	).First()
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return convert.StructAssign(m, &Note{}).(*Note), nil
@@ -88,6 +91,9 @@ func (d *Dao) NoteGetById(id int64, uid int64) (*Note, error) {
 	u := d.note(uid).Note
 	m, err := u.WithContext(d.ctx).Where(u.ID.Eq(id)).First()
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -96,15 +102,15 @@ func (d *Dao) NoteGetById(id int64, uid int64) (*Note, error) {
 
 // NoteGetByPath 根据路径获取笔记
 // 函数名: NoteGetByPath
-// 函数使用说明: 根据笔记路径和保险库ID查询笔记记录。
+// 函数使用说明: 根据笔记路径和保险库ID查询笔记记录。当记录不存在时返回 nil (不返回错误)。
 // 参数说明:
 //   - path string: 笔记路径
 //   - vaultID int64: 保险库ID
 //   - uid int64: 用户ID
 //
 // 返回值说明:
-//   - *Note: 笔记数据
-//   - error: 出错时返回错误
+//   - *Note: 笔记数据，不存在时返回 nil
+//   - error: 只在真实数据库错误时返回，ErrRecordNotFound 返回 nil
 func (d *Dao) NoteGetByPath(path string, vaultID int64, uid int64) (*Note, error) {
 	u := d.note(uid).Note
 	m, err := u.WithContext(d.ctx).Where(
@@ -112,6 +118,9 @@ func (d *Dao) NoteGetByPath(path string, vaultID int64, uid int64) (*Note, error
 		u.Path.Eq(path),
 	).First()
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return convert.StructAssign(m, &Note{}).(*Note), nil
