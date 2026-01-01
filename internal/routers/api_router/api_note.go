@@ -70,7 +70,7 @@ func (n *Note) Get(c *gin.Context) {
 		return
 	}
 	if note == nil {
-		global.Logger.Error("apiRouter.Note.Get note not found: vault=%s path=%s", params.Vault, params.Path)
+		global.Logger.Error("apiRouter.Note.Get note not found", zap.String("vault", params.Vault), zap.String("path", params.Path))
 		response.ToResponse(code.ErrorNoteNotFound)
 		return
 	}
